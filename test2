@@ -1,0 +1,72 @@
+  --Return Rate cua tung san pham theo nam
+SELECT
+  orders.years,
+  orders.ProductKey,
+  products.ProductSubcategoryKey,
+  sub_categories.SubcategoryName,
+  products.ProductName,
+  orders.num_order,
+  return.num_return,
+  return.num_return/orders.num_order AS return_rate
+FROM ((
+    SELECT
+      EXTRACT(YEAR
+      FROM
+        OrderDate) AS years,
+      ProductKey,
+      SUM(OrderQuantity) AS num_order
+    FROM
+      `adventure-364908.adventure.Sales_2015`
+    GROUP BY
+      years,
+      ProductKey)
+  UNION ALL (
+    SELECT
+      EXTRACT(YEAR
+      FROM
+        OrderDate) AS years,
+      ProductKey,
+      SUM(OrderQuantity) AS num_order
+    FROM
+      `adventure-364908.adventure.Sales_2016`
+    GROUP BY
+      years,
+      ProductKey)
+  UNION ALL (
+    SELECT
+      EXTRACT(YEAR
+      FROM
+        OrderDate) AS years,
+      ProductKey,
+      SUM(OrderQuantity) AS num_order
+    FROM
+      `adventure-364908.adventure.Sales_2017`
+    GROUP BY
+      years,
+      ProductKey)) AS orders
+INNER JOIN (
+  SELECT
+    EXTRACT(YEAR
+    FROM
+      ReturnDate) AS years,
+    ProductKey,
+    SUM(ReturnQuantity) AS num_return
+  FROM
+    `adventure-364908.adventure.Returns`
+  GROUP BY
+    years,
+    ProductKey) AS return
+ON
+  orders.years = return.years
+  AND orders.ProductKey = return.ProductKey
+INNER JOIN
+  `adventure-364908.adventure.Products` products
+ON
+  return.ProductKey = products.ProductKey
+INNER JOIN
+  `adventure-364908.adventure.Product_Subcategories` sub_categories
+ON
+  products.ProductSubcategoryKey = sub_categories.ProductSubcategoryKey
+ORDER BY
+  years,
+  return_rate DESC
